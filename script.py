@@ -1,8 +1,11 @@
 import mwclient
 site = mwclient.Site('en.wikipedia.org')
 
-# PLAYERSFILE = 'players.txt'
-PLAYERSFILE = 'sampleplayers.txt'
+PLAYERSFILE = 'players.txt'
+#PLAYERSFILE = 'sampleplayers.txt'
+DISAMBIGS = 'disambigs.txt'
+NEEDSPAGE = 'needspage.txt'
+NEEDSIMAGE = 'needsimage.txt'
 
 
 def name(page):
@@ -45,36 +48,32 @@ def getPage(name):
 
 
 def normaliseName(name):
-    last, first = name.split(', ')
+    last, first = name.strip().split(', ')
     return ' '.join([first, last])
 
 
 def main():
-    needspage = []
-    disambigs = []
     hasimage = []
-    needsimage = []
 
-    with open(PLAYERSFILE) as players:
+    with open(PLAYERSFILE) as players, open(DISAMBIGS, 'w') as disambigs, open(NEEDSPAGE, 'w') as needspage, open(NEEDSIMAGE, 'w') as needsimage:
         for player in players:
-            forwardname = normaliseName(player.strip())
+            print(".", end='', flush=True)
+            forwardname = normaliseName(player)
             page = getPage(forwardname)
             if not page:
-                needspage.append(forwardname)
+                print(forwardname, file=needspage)
                 continue
 
             if isDisambiguation(page):
                 # TODO try to get the right page from here!
-                disambigs.append(name(page))
+                print(name(page), file=disambigs)
             elif hasImage(page):
                 hasimage.append(name(page))
             else:
-                needsimage.append(name(page))
+                print(name(page), file=needsimage)
             
-    print("Has image:", hasimage)
-    print("Disambig:", disambigs)
-    print("Needs image:", needsimage)
-    print("No page:", needspage)
+    print("\nHas image:", len(hasimage))
+    print("See {}, {} and {} for further work!".format(DISAMBIGS, NEEDSPAGE, NEEDSIMAGE))
 
 
 if __name__ == "__main__":
