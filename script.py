@@ -5,6 +5,17 @@ site = mwclient.Site('en.wikipedia.org')
 PLAYERSFILE = 'sampleplayers.txt'
 
 
+def name(page):
+    # We should only have objects that have a .name,
+    # but this seems broken on python3
+    # https://github.com/mwclient/mwclient/issues/106
+    try:
+        return page['title']
+    except TypeError:
+        # cool, we actually have a Page
+        return page.name
+
+
 def isBoring(imagename):
     # Flags, Increase2.svg, Decrease2.svg
     return imagename.endswith('.svg')
@@ -14,7 +25,7 @@ def hasImage(page):
     # TODO: Does this page exist in other languages?
     # Do any of them have an image?
     images = page.images()
-    imgnames = [image.name for image in images]
+    imgnames = [name(image) for image in images]
     interestingImages = [imgname for imgname in imgnames
                          if not isBoring(imgname)]
     return bool(interestingImages)
@@ -22,8 +33,8 @@ def hasImage(page):
 
 def isDisambiguation(page):
     cats = page.categories()
-    disambigCat = u'Category:All disambiguation pages'
-    return disambigCat in [cat.name for cat in cats]
+    disambigCat = 'Category:All disambiguation pages'
+    return disambigCat in [name(cat) for cat in cats]
 
 
 def getPage(name):
@@ -46,24 +57,24 @@ def main():
 
     with open(PLAYERSFILE) as players:
         for player in players:
-            name = normaliseName(player.strip())
-            page = getPage(name)
+            forwardname = normaliseName(player.strip())
+            page = getPage(forwardname)
             if not page:
-                needspage.append(name)
+                needspage.append(forwardname)
                 continue
 
             if isDisambiguation(page):
                 # TODO try to get the right page from here!
-                disambigs.append(name)
+                disambigs.append(name(page))
             elif hasImage(page):
-                hasimage.append(name)
+                hasimage.append(name(page))
             else:
-                needsimage.append(name)
+                needsimage.append(name(page))
             
-    print "Has image:", hasimage
-    print "Disambig:", disambigs
-    print "Needs image:", needsimage
-    print "No page:", needspage
+    print("Has image:", hasimage)
+    print("Disambig:", disambigs)
+    print("Needs image:", needsimage)
+    print("No page:", needspage)
 
 
 if __name__ == "__main__":
